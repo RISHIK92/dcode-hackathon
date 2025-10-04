@@ -1,6 +1,5 @@
 import LoginForm  from "@/components/login-form"
 
-
 export default function Page() {
   return (
     <main className="min-h-dvh grid place-items-center bg-background">

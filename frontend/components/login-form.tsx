@@ -87,20 +87,23 @@ export default function LoginForm() {
 
               <div className="pt-2">
                 <Button
-                  type="submit"
-                  disabled={loading}
-                  className={cn(
-                    "w-full justify-center",
-                    "rounded-lg",
-                    // Gradient stroke style button
-                    "bg-[linear-gradient(var(--color-card),var(--color-card))_padding-box,linear-gradient(120deg,var(--color-chart-2),var(--color-chart-4))_border-box]",
-                    "border border-transparent",
-                    "text-primary-foreground",
-                  )}
-                >
-                  {loading ? "Signing in..." : "Sign in"}
-                  <ArrowRight className="ml-2 size-4" aria-hidden />
-                </Button>
+  type="submit"
+  disabled={loading}
+  className={cn(
+    "w-full justify-center",
+    "rounded-xl px-4 py-2 font-medium",
+    "bg-black text-white",
+    "border border-black",
+    "transition-all duration-300 ease-out",
+    "hover:bg-white hover:text-black hover:shadow-lg",
+    "disabled:opacity-70 disabled:cursor-not-allowed"
+  )}
+>
+  {loading ? "Signing in..." : "Sign in"}
+  <ArrowRight className="ml-2 size-4" aria-hidden />
+</Button>
+
+
               </div>
 
               <p className="text-center text-sm text-muted-foreground">
