@@ -1,0 +1,19 @@
+{
+  "name": "webrtc-bridge",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "child_process": "^1.0.2",
+    "dotenv": "^17.2.3",
+    "werift": "^0.22.2",
+    "ws": "^8.18.3"
+  }
+}
