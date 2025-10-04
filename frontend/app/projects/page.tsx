@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Plus, Trash2, FolderOpen, Code2, Archive, ArchiveRestore, Rocket, Edit } from 'lucide-react';
 import { 
   AlertDialog, 
@@ -174,6 +175,13 @@ export default function ProjectsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
+  useEffect(() => {
+    const root = window.document.documentElement;
+    root.classList.remove('light', 'dark');
+    root.classList.add(theme);
+  }, [theme]);
 
   const loadProjects = () => {
     setCurrentProjects(getCurrentProjects());
@@ -208,14 +216,24 @@ export default function ProjectsPage() {
   };
 
   return (
-    <div className="bg-black/30 min-h-screen">
+    <div className="bg-background text-foreground min-h-screen">
       <div className="container mx-auto px-4 py-12">
         <div className="flex items-center justify-between mb-10">
           <div>
             <h1 className="text-3xl font-bold">My Projects</h1>
             <p className="text-muted-foreground">Welcome back! Manage your projects or start a new one.</p>
           </div>
-          <Button onClick={() => setIsModalOpen(true)} size="lg"><Plus className="w-5 h-5 mr-2" /> New Project</Button>
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+               <span className="text-sm text-muted-foreground">Light</span>
+               <Switch
+                 checked={theme === 'dark'}
+                 onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
+               />
+               <span className="text-sm text-muted-foreground">Dark</span>
+            </div>
+            <Button onClick={() => setIsModalOpen(true)} size="lg"><Plus className="w-5 h-5 mr-2" /> New Project</Button>
+          </div>
         </div>
         
         <h2 className="text-xl font-semibold mb-4">Active Projects</h2>
@@ -226,12 +244,11 @@ export default function ProjectsPage() {
               </div>
               <h3 className="text-xl font-semibold mb-2">Ready for Liftoff?</h3>
               <p className="text-muted-foreground mb-6 max-w-sm mx-auto">Your next great idea starts here. Create a project to begin your journey.</p>
-              {/* "Create First Project" Button is removed as requested */}
           </Card>
         ) : (
           <div className="space-y-2">
             {currentProjects.map((project) => (
-              <Card key={project.id} className="bg-card text-card-foreground flex flex-row items-start justify-between rounded-xl border shadow-sm p-4 gap-4">
+              <Card key={project.id} className="bg-card text-card-foreground flex flex-row items-center justify-between rounded-xl border shadow-sm p-4 gap-4">
                 <div 
                   className="cursor-pointer group flex-grow min-w-0"
                   onClick={() => setEditingProject(project)}
@@ -258,7 +275,7 @@ export default function ProjectsPage() {
             </h2>
             <div className="space-y-2">
               {archivedProjects.map((project) => (
-                <Card key={project.id} className="bg-card text-card-foreground flex flex-row items-start justify-between rounded-xl border shadow-sm p-4 gap-4">
+                <Card key={project.id} className="bg-card text-card-foreground flex flex-row items-center justify-between rounded-xl border shadow-sm p-4 gap-4">
                   <div className="flex-grow min-w-0">
                     <p className="font-semibold text-lg text-muted-foreground truncate">{project.name}</p>
                   </div>
