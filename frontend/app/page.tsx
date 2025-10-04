@@ -8,7 +8,6 @@ export default function Home() {
       {/* Hero Section */}
       <section className="relative overflow-hidden py-20 px-4">
         <div className="max-w-6xl mx-auto text-center">
-          {/* Logo */}
           <div className="flex items-center justify-center gap-3 mb-6">
             <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center shadow-lg">
               <Play className="w-8 h-8 text-primary-foreground" fill="currentColor" />
