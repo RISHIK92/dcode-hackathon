@@ -15,9 +15,9 @@ export const runProjectSession = async (req: AuthRequest, res: Response) => {
   try {
     // 1. Authorize: Verify the project exists and belongs to the user
     const project = await prisma.project.findFirst({
-      where: {
-        id: projectId,
-        userId: userId!,
+      where: { id: projectId, userId: userId! },
+      include: {
+        files: true,
       },
     });
 
@@ -31,7 +31,7 @@ export const runProjectSession = async (req: AuthRequest, res: Response) => {
     const containerId = await containerManager.startContainer(
       userId!,
       projectId,
-      project.code
+      project.files
     );
 
     // 3. Respond with a session identifier

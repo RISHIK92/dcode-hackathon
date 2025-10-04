@@ -2,6 +2,36 @@ import { Response } from "express";
 import { AuthRequest } from "../middleware/middleware.js";
 import prisma from "../services/db.js";
 
+const DEFAULT_BOILERPLATE_CODE = `import { Text, View, StyleSheet } from 'react-native';
+
+export default function HomeScreen() {
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Welcome!</Text>
+      <Text style={styles.subtitle}>Edit app/index.ts to start building your app.</Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#666',
+  },
+});
+`;
+
 /**
  * @desc    Create a new project
  * @route   POST /api/projects
@@ -16,18 +46,29 @@ export const createProject = async (req: AuthRequest, res: Response) => {
   }
 
   try {
+    // This is a "nested write". It creates the Project and its related File in one operation.
     const project = await prisma.project.create({
       data: {
         name,
         userId: userId!,
+        files: {
+          create: [
+            {
+              name: "app/index.ts", // The file path
+              content: DEFAULT_BOILERPLATE_CODE,
+            },
+          ],
+        },
+      },
+      include: {
+        files: true, // Return the new project with its files included
       },
     });
 
-    // As requested, send back the new project's ID
     res.status(201).json({
       message: "Project created successfully",
       projectId: project.id,
-      project, // Also sending the full project object is good practice
+      project,
     });
   } catch (error) {
     console.error("Create Project Error:", error);
@@ -137,6 +178,10 @@ export const getProjectById = async (req: AuthRequest, res: Response) => {
   try {
     const project = await prisma.project.findFirst({
       where: { id, userId: userId! },
+      // IMPORTANT: We now include the files in the response
+      include: {
+        files: true,
+      },
     });
 
     if (!project) {

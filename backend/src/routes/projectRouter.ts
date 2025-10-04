@@ -6,7 +6,9 @@ import {
   getProjectById,
   updateProjectName,
   deleteProject,
+  updateProjectCode,
 } from "../controllers/projectController";
+import fileRoutes from "./fileRouter";
 
 const router = Router();
 
@@ -19,5 +21,9 @@ router
   .get(getProjectById)
   .put(updateProjectName)
   .delete(deleteProject);
+
+router.put("/:id/code", updateProjectCode);
+
+router.use("/:projectId/files", fileRoutes);
 
 export default router;

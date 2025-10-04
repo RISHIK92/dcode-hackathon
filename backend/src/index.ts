@@ -3,7 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import healthRoutes from "./routes/health.js";
 import authRoutes from "./routes/authRouter.js";
-import projectRoutes from "./routes/projectRoutes.js";
+import projectRoutes from "./routes/projectRouter.js";
 import sessionRoutes from "./routes/sessionRouter.js";
 
 dotenv.config();

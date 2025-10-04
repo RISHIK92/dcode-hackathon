@@ -22,22 +22,24 @@ const DOCKER_IMAGE = "react-native-emulator:latest"; // The name of your pre-bui
 const prepareProjectDirectory = async (
   userId: string,
   projectId: string,
-  code: string
+  files: { name: string; content: string }[]
 ): Promise<string> => {
-  // Create a unique, isolated directory on the host machine
   const hostPath = path.resolve(
     __dirname,
     `../../user_data/${userId}/${projectId}`
   );
 
-  // Ensure the directory exists and is empty
   await fs.ensureDir(hostPath);
   await fs.emptyDir(hostPath);
 
-  // Write the project code into a main file (e.g., App.js)
-  // In a real app, you might write multiple files (package.json, etc.)
-  await fs.writeFile(path.join(hostPath, "App.js"), code);
+  // This loop correctly handles file paths like `app/index.js` and `app/components/MyComponent.js`
+  for (const file of files) {
+    const filePath = path.join(hostPath, file.name);
+    await fs.ensureFile(filePath); // Creates directories if they don't exist
+    await fs.writeFile(filePath, file.content);
+  }
 
+  console.log(`Prepared ${files.length} files in ${hostPath}`);
   return hostPath;
 };
 
@@ -51,7 +53,7 @@ const prepareProjectDirectory = async (
 export const startContainer = async (
   userId: string,
   projectId: string,
-  projectCode: string
+  projectFiles: { name: string; content: string }[]
 ): Promise<string> => {
   // If a session for this project already exists, stop and remove it first for a clean start
   if (activeSessions.has(projectId)) {
@@ -61,7 +63,7 @@ export const startContainer = async (
   const hostPath = await prepareProjectDirectory(
     userId,
     projectId,
-    projectCode
+    projectFiles
   );
 
   console.log(`Mounting host path: ${hostPath} to container`);
@@ -69,12 +71,11 @@ export const startContainer = async (
   const container = await docker.createContainer({
     Image: DOCKER_IMAGE,
     Env: [
-      // <-- ADD THIS
       `PROJECT_ID=${projectId}`,
-      `SIGNALING_SERVER_URL=ws://host.docker.internal:3001`, // 'host.docker.internal' is a special DNS name for the host machine from within a Docker container
+      `SIGNALING_SERVER_URL=ws://host.docker.internal:3001`,
     ],
     HostConfig: {
-      Binds: [`${hostPath}:/app/src`],
+      Binds: [`${hostPath}:/app`],
       Privileged: true,
     },
   });
