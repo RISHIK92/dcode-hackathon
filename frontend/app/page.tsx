@@ -4,7 +4,7 @@ import { Play, Code, Zap, Smartphone } from "lucide-react";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen black-background">
       {/* Hero Section */}
       <section className="relative overflow-hidden py-20 px-4">
         <div className="max-w-6xl mx-auto text-center">
@@ -27,7 +27,7 @@ export default function Home() {
           </p>
 
           {/* CTA Button */}
-          <Link href="/playground">
+          <Link href="/projects">
             <Button size="lg" className="gap-2 text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-shadow">
               <Play className="w-5 h-5" />
               Get Started
