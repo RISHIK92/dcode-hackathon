@@ -1,4 +1,33 @@
 import prisma from "../services/db.js";
+const DEFAULT_BOILERPLATE_CODE = `import { Text, View, StyleSheet } from 'react-native';
+
+export default function HomeScreen() {
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Welcome!</Text>
+      <Text style={styles.subtitle}>Edit App.js to start building your app.</Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#666',
+  },
+});
+`;
 /**
  * @desc    Create a new project
  * @route   POST /api/projects
@@ -11,17 +40,28 @@ export const createProject = async (req, res) => {
         return res.status(400).json({ error: "Project name is required." });
     }
     try {
+        // This is a "nested write". It creates the Project and its related File in one operation.
         const project = await prisma.project.create({
             data: {
                 name,
                 userId: userId,
+                files: {
+                    create: [
+                        {
+                            name: "App.js", // The file path
+                            content: DEFAULT_BOILERPLATE_CODE,
+                        },
+                    ],
+                },
+            },
+            include: {
+                files: true, // Return the new project with its files included
             },
         });
-        // As requested, send back the new project's ID
         res.status(201).json({
             message: "Project created successfully",
             projectId: project.id,
-            project, // Also sending the full project object is good practice
+            project,
         });
     }
     catch (error) {
@@ -120,6 +160,10 @@ export const getProjectById = async (req, res) => {
     try {
         const project = await prisma.project.findFirst({
             where: { id, userId: userId },
+            // IMPORTANT: We now include the files in the response
+            include: {
+                files: true,
+            },
         });
         if (!project) {
             return res
@@ -129,51 +173,6 @@ export const getProjectById = async (req, res) => {
         res.status(200).json(project);
     }
     catch (error) {
-        res.status(500).json({ error: "Internal server error." });
-    }
-};
-export const updateProjectCode = async (req, res) => {
-    const { id } = req.params; // The ID of the project to update
-    const { code } = req.body; // The new code from the user's editor
-    const userId = req.user?.id;
-    // 1. Basic Validation: Ensure the 'code' field was actually sent.
-    // We allow an empty string "" but not a missing field.
-    if (code === undefined) {
-        return res.status(400).json({ error: 'The "code" field is required.' });
-    }
-    try {
-        // 2. Authorization: Verify that the project exists and belongs to the user making the request.
-        // This is the most important security step.
-        const project = await prisma.project.findFirst({
-            where: {
-                id: id,
-                userId: userId,
-            },
-        });
-        if (!project) {
-            return res
-                .status(404)
-                .json({
-                error: "Project not found or you do not have permission to edit it.",
-            });
-        }
-        // 3. Database Update: If authorization passes, update the project's code.
-        const updatedProject = await prisma.project.update({
-            where: {
-                id: id,
-            },
-            data: {
-                code: code,
-            },
-        });
-        // 4. Success Response: Send a confirmation back to the client.
-        res.status(200).json({
-            message: "Project code updated successfully.",
-            project: updatedProject, // Sending back the updated project is good practice
-        });
-    }
-    catch (error) {
-        console.error("Update Project Code Error:", error);
         res.status(500).json({ error: "Internal server error." });
     }
 };

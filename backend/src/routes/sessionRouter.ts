@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { protect } from "../middleware/middleware";
+import { protect } from "../middleware/middleware.js";
 import {
   runProjectSession,
   stopProjectSession,
-} from "../controllers/sessionController";
+} from "../controllers/sessionController.js";
 
 const router = Router();
 

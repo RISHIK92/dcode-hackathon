@@ -8,7 +8,7 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Welcome!</Text>
-      <Text style={styles.subtitle}>Edit app/index.ts to start building your app.</Text>
+      <Text style={styles.subtitle}>Edit App.js to start building your app.</Text>
     </View>
   );
 }
@@ -54,7 +54,7 @@ export const createProject = async (req: AuthRequest, res: Response) => {
         files: {
           create: [
             {
-              name: "app/index.ts", // The file path
+              name: "App.js", // The file path
               content: DEFAULT_BOILERPLATE_CODE,
             },
           ],

@@ -1,4 +1,4 @@
-import prisma from "../services/db";
+import prisma from "../services/db.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-key";

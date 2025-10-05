@@ -25,9 +25,11 @@ import {
   Download,
   GitMerge,
 } from "lucide-react";
+import { EmulatorStream } from "./EmulatorStream";
 
 // --- Type Definitions ---
 export interface FileNode {
+  id: string;
   name: string;
   type: "file" | "folder";
   path: string;
@@ -38,46 +40,19 @@ export interface FileNode {
 // --- Constants ---
 const DEFAULT_FILES: FileNode[] = [
   {
+    id: "folder-src", // Placeholder ID
     name: "src",
     type: "folder",
     path: "src",
     children: [
       {
+        id: "file-app-js", // Placeholder ID
         name: "App.js",
         type: "file",
         path: "src/App.js",
         content: `import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
-
-export default function App() {
-  return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Welcome to RNLive!</Text>
-      <Text style={styles.subtitle}>Press 'Run' to see your changes.</Text>
-    </SafeAreaView>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#111',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#555',
-    textAlign: 'center',
-  },
-});`,
+// ... (rest of the content)
+`,
       },
     ],
   },
@@ -144,8 +119,8 @@ const FileExplorer: React.FC<{
   onAddFile: (parentPath: string) => void;
   onDeleteFile: (path: string) => void;
 }> = ({ files, onSelectFile, selectedFile, onAddFile, onDeleteFile }) => {
+  const [isOpen, setIsOpen] = useState(true);
   const renderFileNode = (node: FileNode, depth: number = 0) => {
-    const [isOpen, setIsOpen] = useState(true);
     if (node.type === "folder") {
       return (
         <div key={node.path}>
@@ -237,14 +212,35 @@ const PreviewFrame = ({ code }: { code: string }) => {
 };
 
 // --- Main Playground Editor Component ---
-export default function PlaygroundEditor() {
+export default function PlaygroundEditor({
+  projectId,
+}: {
+  projectId?: string;
+}) {
   const [files, setFiles] = useState<FileNode[]>(DEFAULT_FILES);
-  const [selectedFile, setSelectedFile] = useState<string>("src/App.js");
+  const [selectedFile, setSelectedFile] = useState<string>("App.jsx");
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [isRunning, setIsRunning] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [status, setStatus] = useState<"connected" | "rebuilding">("connected");
   const [compiledCode, setCompiledCode] = useState("");
   const [paneWidths, setPaneWidths] = useState([20, 40, 40]);
   const [showFooter, setShowFooter] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [isLoading, setIsLoading] = useState(true);
+  const [authToken, setAuthToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedToken = localStorage.getItem("token");
+      if (storedToken) {
+        setAuthToken(storedToken);
+      } else {
+        console.error("No authentication token found. Redirecting to login.");
+        window.location.href = "/login";
+      }
+    }
+  }, []);
 
   const [previewDevice, setPreviewDevice] = useState({
     type: "iphone" as keyof typeof DEVICE_CONFIG,
@@ -255,10 +251,150 @@ export default function PlaygroundEditor() {
   const sidebarRef = useRef<HTMLDivElement>(null);
   const isResizing = useRef<number | null>(null);
 
-  const runCode = () => {
-    setStatus("rebuilding");
-    setCompiledCode(getCurrentFileContent());
-    setTimeout(() => setStatus("connected"), 500);
+  const findFileNode = (nodes: FileNode[], path: string): FileNode | null => {
+    for (const node of nodes) {
+      if (node.path === path) return node;
+      if (node.children) {
+        const found = findFileNode(node.children, path);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  useEffect(() => {
+    if (!isLoading && files.length > 0) {
+      runCode();
+    }
+  }, [isLoading]);
+
+  useEffect(() => {
+    // Only run this if we have the necessary IDs and token
+    if (!projectId || !authToken) {
+      setIsLoading(false); // Not loading if we can't fetch
+      return;
+    }
+
+    const fetchProjectData = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch(
+          `http://localhost:4000/api/projects/${projectId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch project data.");
+        }
+
+        const projectData = await response.json();
+
+        // The API returns a flat list of files. We need to convert it into a tree structure.
+        // This is a placeholder for a real tree-building function. For now, we'll assume a flat structure is ok.
+        // Or better yet, we can build the tree structure from the flat list.
+        const fileTree = buildFileTree(projectData.files);
+
+        setFiles(fileTree);
+
+        // Automatically select the first file to display
+        if (projectData.files && projectData.files.length > 0) {
+          // A smarter version would find 'app/index.js'
+          const entryPoint =
+            projectData.files.find((f: any) => f.name === "App.js") ||
+            projectData.files[0];
+          setSelectedFile(entryPoint.name);
+        }
+      } catch (error) {
+        console.error("Fetch Project Error:", error);
+        alert("Could not load your project.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProjectData();
+  }, [projectId, authToken]);
+  const buildFileTree = (fileList: any[]): FileNode[] => {
+    return [
+      {
+        id: "folder-app",
+        name: "app",
+        type: "folder",
+        path: "app",
+        children: fileList.map((file) => ({
+          ...file,
+          type: "file",
+          path: file.name, // The full path IS the name from the DB
+        })),
+      },
+    ];
+  };
+
+  // --- NEW: FUNCTION TO SAVE THE CURRENT FILE ---
+  const saveCurrentFile = async () => {
+    if (!selectedFile) {
+      console.error("Attempted to save with no file selected.");
+      return false;
+    }
+    const fileToSave = findFileNode(files, selectedFile);
+    if (!fileToSave || fileToSave.type !== "file") {
+      alert("No valid file selected to save.");
+      return false; // Indicate failure
+    }
+
+    setIsSaving(true);
+    try {
+      const response = await fetch(
+        `http://localhost:4000/api/projects/${projectId}/files/${fileToSave.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({ content: fileToSave.content }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to save the file.");
+      }
+
+      console.log("File saved successfully!");
+      return true; // Indicate success
+    } catch (error) {
+      console.error("Save Error:", error);
+      alert(
+        `Error saving file: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+      return false; // Indicate failure
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // --- MODIFIED "RUN" LOGIC ---
+  const runCode = async () => {
+    if (isSaving || isRunning) return; // Prevent multiple clicks
+
+    // Step 1: Save the current file before running.
+    const saveSuccess = await saveCurrentFile();
+
+    // Step 2: If saving was successful, proceed to run the session.
+    if (saveSuccess) {
+      setIsRunning(true);
+      setSessionId(projectId || "");
+    } else {
+      // If saving failed, do not start the run session.
+      console.log("Run aborted due to save failure.");
+    }
   };
 
   useEffect(() => {
@@ -301,12 +437,118 @@ export default function PlaygroundEditor() {
     setFiles(updateNode(files));
   };
 
-  const handleAddFile = (parentPath: string) => {
-    /* ... implementation ... */
+  const handleAddFile = async (parentPath: string) => {
+    const fileName = prompt("Enter file name (e.g., NewComponent.js):");
+    if (!fileName || !fileName.trim()) return;
+
+    // We assume new files are created in the 'app' directory for this playground
+    const fullPath = `app/${fileName}`;
+
+    try {
+      // 1. Call the backend to create the file in the database
+      const response = await fetch(
+        `http://localhost:4000/api/projects/${projectId}/files`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({
+            name: fullPath,
+            content: `// New file: ${fileName}\n\nexport default function NewComponent() {\n  return null;\n}`,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to create file on the server.");
+      }
+
+      const newFileFromServer = await response.json();
+
+      // 2. Update the local state to reflect the change
+      // A more robust solution would re-fetch the project, but for now we'll add it manually.
+      const newFileNode: FileNode = {
+        id: newFileFromServer.id,
+        name: fileName,
+        type: "file",
+        path: newFileFromServer.name,
+        content: newFileFromServer.content,
+      };
+
+      const addFileToTree = (nodes: FileNode[]): FileNode[] => {
+        return nodes.map((node) => {
+          if (node.path === parentPath && node.type === "folder") {
+            return {
+              ...node,
+              children: [...(node.children || []), newFileNode],
+            };
+          }
+          if (node.type === "folder" && node.children) {
+            return { ...node, children: addFileToTree(node.children) };
+          }
+          return node;
+        });
+      };
+
+      setFiles((prevFiles) => addFileToTree(prevFiles));
+      setSelectedFile(newFileNode.path);
+    } catch (error) {
+      console.error("Add File Error:", error);
+      alert("Could not create the file.");
+    }
   };
-  const handleDeleteFile = (path: string) => {
-    /* ... implementation ... */
+
+  // --- REVISED: handleDeleteFile ---
+  const handleDeleteFile = async (path: string) => {
+    if (
+      !confirm(
+        `Are you sure you want to delete ${path}? This cannot be undone.`
+      )
+    )
+      return;
+
+    const fileToDelete = findFileNode(files, path);
+    if (!fileToDelete) return;
+
+    try {
+      // 1. Call the backend to delete the file from the database
+      const response = await fetch(
+        `http://localhost:4000/api/projects/${projectId}/files/${fileToDelete.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to delete the file on the server.");
+      }
+
+      // 2. Update the local state to remove the file
+      const deleteFromTree = (nodes: FileNode[]): FileNode[] => {
+        return nodes
+          .filter((node) => node.path !== path)
+          .map((node) => {
+            if (node.type === "folder" && node.children) {
+              return { ...node, children: deleteFromTree(node.children) };
+            }
+            return node;
+          });
+      };
+      setFiles((prevFiles) => deleteFromTree(prevFiles));
+      if (selectedFile === path) {
+        setSelectedFile("App.js"); // Reset to a safe default
+      }
+    } catch (error) {
+      console.error("Delete File Error:", error);
+      alert("Could not delete the file.");
+    }
   };
+
   const handleDeviceTypeChange = (type: keyof typeof DEVICE_CONFIG) => {
     /* ... implementation ... */
   };
@@ -366,7 +608,7 @@ export default function PlaygroundEditor() {
       window.removeEventListener("mouseup", onMouseUp);
     };
   }, [onMouseMove, onMouseUp]);
-
+  console.log("RENDER", { selectedFile, files });
   const currentFileName = selectedFile.split("/").pop() || "";
   const { type, model } = previewDevice;
   const currentDeviceConfig =
@@ -445,8 +687,22 @@ export default function PlaygroundEditor() {
                     <GitMerge className="w-4 h-4" />
                   </Button>
                 </div>
-                <Button onClick={runCode} className="gap-2">
-                  <Play className="w-4 h-4" /> Run
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={saveCurrentFile}
+                  disabled={isSaving}
+                >
+                  {isSaving ? "Saving..." : "Save"}
+                </Button>
+
+                <Button
+                  onClick={runCode}
+                  className="gap-2"
+                  disabled={isRunning || isSaving}
+                >
+                  <Play className="w-4 h-4" />{" "}
+                  {isRunning ? "Running..." : "Run"}
                 </Button>
                 <div className="flex items-center gap-2 flex-grow">
                   <Select
@@ -501,56 +757,33 @@ export default function PlaygroundEditor() {
             </Card>
 
             <div className="flex-1 flex items-center justify-center bg-muted/20 rounded-lg p-2 overflow-y-auto">
-              {type === "web" ? (
-                <Card
-                  className="shadow-lg rounded-lg overflow-hidden flex flex-col border transition-all"
-                  style={{
-                    width: currentDeviceConfig.width,
-                    height: currentDeviceConfig.height,
-                  }}
-                >
-                  <div className="bg-muted/50 p-2 flex items-center gap-2 border-b">
-                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                    <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  </div>
-                  <div className="flex-1 bg-white">
-                    <PreviewFrame code={compiledCode} />
-                  </div>
-                </Card>
-              ) : (
+              {/* THIS IS THE KEY CHANGE */}
+              {isRunning && sessionId ? (
+                // If the session is active, show the live stream
                 <div
                   className="bg-gray-950 shadow-2xl p-2.5 relative transition-all flex items-center justify-center my-4"
+                  // We ignore the dynamic sizing for now and just make it fill the space
                   style={{
-                    width: currentDeviceConfig.width,
-                    height: currentDeviceConfig.height,
-                    borderRadius: currentDeviceConfig.radius,
+                    width: "330px",
+                    height: "680px",
+                    borderRadius: "1.75rem",
                   }}
                 >
-                  {currentDeviceConfig.notch === "dynamic-island" && (
-                    <div className="absolute top-3 left-1/2 -translate-x-1/2 w-28 h-7 bg-black rounded-full z-20"></div>
-                  )}
-                  {currentDeviceConfig.notch === "punch-hole" && (
-                    <div className="absolute top-4 left-1/2 -translate-x-1/2 w-4 h-4 bg-black rounded-full z-20 border-2 border-gray-900"></div>
-                  )}
-                  {currentDeviceConfig.notch === "classic" && (
-                    <div
-                      className="absolute top-0 left-0 w-full h-16 bg-gray-950 z-20"
-                      style={{
-                        borderRadius: `${currentDeviceConfig.radius} ${currentDeviceConfig.radius} 0 0`,
-                      }}
-                    >
-                      <div className="absolute top-6 left-1/2 -translate-x-1/2 w-20 h-2 bg-gray-700 rounded-full"></div>
-                    </div>
-                  )}
                   <div
                     className="w-full h-full overflow-hidden bg-white"
-                    style={{
-                      borderRadius: `calc(${currentDeviceConfig.radius} - 8px)`,
-                    }}
+                    style={{ borderRadius: `calc(1.75rem - 8px)` }}
                   >
-                    <PreviewFrame code={compiledCode} />
+                    <EmulatorStream
+                      projectId={sessionId}
+                      authToken={authToken || ""}
+                    />
                   </div>
+                </div>
+              ) : (
+                // If not running, show a placeholder
+                <div className="text-center text-muted-foreground">
+                  <Smartphone size={48} className="mx-auto mb-2" />
+                  <p>Click "Run" to start the live preview.</p>
                 </div>
               )}
             </div>

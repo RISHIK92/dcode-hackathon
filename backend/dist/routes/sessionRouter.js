@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { protect } from "../middleware/middleware";
-import { runProjectSession, stopProjectSession, } from "../controllers/sessionController";
+import { protect } from "../middleware/middleware.js";
+import { runProjectSession, stopProjectSession, } from "../controllers/sessionController.js";
 const router = Router();
 router.use(protect);
 router.post("/:projectId/run", runProjectSession);

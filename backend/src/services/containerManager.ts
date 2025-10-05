@@ -1,6 +1,7 @@
 import Docker from "dockerode";
 import path from "path";
 import fs from "fs-extra";
+import { fileURLToPath } from "url";
 
 // Initialize Dockerode to connect to the Docker daemon
 // (ensure Docker is running on your machine)
@@ -11,6 +12,9 @@ const docker = new Docker();
 const activeSessions = new Map<string, Docker.Container>();
 
 const DOCKER_IMAGE = "react-native-emulator:latest"; // The name of your pre-built Docker image
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Prepares the project code on the local filesystem.
@@ -75,8 +79,8 @@ export const startContainer = async (
       `SIGNALING_SERVER_URL=ws://host.docker.internal:3001`,
     ],
     HostConfig: {
-      Binds: [`${hostPath}:/app`],
-      Privileged: true,
+      Binds: [`${hostPath}:/app/user_code`],
+      ExtraHosts: ["host.docker.internal:host-gateway"],
     },
   });
 

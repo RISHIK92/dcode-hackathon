@@ -1,5 +1,5 @@
-import prisma from "../services/db";
-import * as containerManager from "../services/containerManager";
+import prisma from "../services/db.js";
+import * as containerManager from "../services/containerManager.js";
 /**
  * @desc    Starts a build session for a project
  * @route   POST /api/sessions/:projectId/run

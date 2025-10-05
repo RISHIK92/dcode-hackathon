@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import prisma from "../services/db";
+import prisma from "../services/db.js";
 const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-key";
 /**
  * Middleware to verify JWT and attach user to the request object.

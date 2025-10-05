@@ -1,6 +1,7 @@
 import Docker from "dockerode";
 import path from "path";
 import fs from "fs-extra";
+import { fileURLToPath } from "url";
 // Initialize Dockerode to connect to the Docker daemon
 // (ensure Docker is running on your machine)
 const docker = new Docker();
@@ -8,6 +9,8 @@ const docker = new Docker();
 // this might be a Redis store or a database table.
 const activeSessions = new Map();
 const DOCKER_IMAGE = "react-native-emulator:latest"; // The name of your pre-built Docker image
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 /**
  * Prepares the project code on the local filesystem.
  * @param userId - The ID of the user.
@@ -19,11 +22,10 @@ const prepareProjectDirectory = async (userId, projectId, files) => {
     const hostPath = path.resolve(__dirname, `../../user_data/${userId}/${projectId}`);
     await fs.ensureDir(hostPath);
     await fs.emptyDir(hostPath);
-    // Loop through all the files and write them to the host path
+    // This loop correctly handles file paths like `app/index.js` and `app/components/MyComponent.js`
     for (const file of files) {
         const filePath = path.join(hostPath, file.name);
-        // fs.ensureFile will create any necessary subdirectories (e.g., 'components/')
-        await fs.ensureFile(filePath);
+        await fs.ensureFile(filePath); // Creates directories if they don't exist
         await fs.writeFile(filePath, file.content);
     }
     console.log(`Prepared ${files.length} files in ${hostPath}`);
@@ -46,13 +48,12 @@ export const startContainer = async (userId, projectId, projectFiles) => {
     const container = await docker.createContainer({
         Image: DOCKER_IMAGE,
         Env: [
-            // <-- ADD THIS
             `PROJECT_ID=${projectId}`,
-            `SIGNALING_SERVER_URL=ws://host.docker.internal:3001`, // 'host.docker.internal' is a special DNS name for the host machine from within a Docker container
+            `SIGNALING_SERVER_URL=ws://host.docker.internal:3001`,
         ],
         HostConfig: {
-            Binds: [`${hostPath}:/app/src`],
-            Privileged: true,
+            Binds: [`${hostPath}:/app/user_code`],
+            ExtraHosts: ["host.docker.internal:host-gateway"],
         },
     });
     await container.start();

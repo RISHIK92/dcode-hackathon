@@ -1,30 +1,61 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { User, Lock, ArrowRight } from "lucide-react"
-import Link from "next/link"
-import { cn } from "@/lib/utils"
+import * as React from "react";
+import { useRouter } from "next/navigation"; // Import useRouter
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Mail, Lock, ArrowRight } from "lucide-react";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 export default function LoginForm() {
-  const [loading, setLoading] = React.useState(false)
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const router = useRouter();
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    setLoading(true)
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
     try {
-      const form = new FormData(e.currentTarget)
-      const username = String(form.get("username") || "")
-      const password = String(form.get("password") || "")
-      // Replace with your auth call or server action
-      await new Promise((r) => setTimeout(r, 800))
-      console.log("[v0] Sign in attempt:", { username, password: password ? "********" : "" })
-      // Navigate or show toast here
+      const form = new FormData(e.currentTarget);
+      const email = String(form.get("email") || "");
+      const password = String(form.get("password") || "");
+
+      const response = await fetch("http://localhost:4000/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Something went wrong");
+      }
+
+      // Handle successful login
+      console.log("Login successful:", data);
+      localStorage.setItem("token", data.token); // Store the token
+
+      // Navigate to a protected route, e.g., a dashboard
+      router.push("/");
+    } catch (error: any) {
+      console.error("Login failed:", error.message);
+      setError(error.message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -41,29 +72,38 @@ export default function LoginForm() {
         className={cn(
           "rounded-xl p-[1px]",
           "bg-[linear-gradient(120deg,var(--color-chart-2),transparent,var(--color-chart-4))]",
-          "shadow-[0_20px_50px_-30px_var(--color-chart-2),0_28px_80px_-40px_var(--color-chart-4)]",
+          "shadow-[0_20px_50px_-30px_var(--color-chart-2),0_28px_80px_-40px_var(--color-chart-4)]"
         )}
       >
         <Card className="rounded-xl bg-card/90 backdrop-blur-sm border border-border">
           <CardHeader className="text-center">
-            <CardTitle className="text-3xl font-semibold text-pretty">Welcome Back</CardTitle>
+            <CardTitle className="text-3xl font-semibold text-pretty">
+              Welcome Back
+            </CardTitle>
             <CardDescription className="mt-1 text-balance">
-              {"Great things are built together. Join a thriving community of creators and collaborators."}
+              {
+                "Great things are built together. Join a thriving community of creators and collaborators."
+              }
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={onSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
+                <Label htmlFor="email">Email</Label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" aria-hidden />
+                  <Mail
+                    className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground"
+                    aria-hidden
+                  />
                   <Input
-                    id="username"
-                    name="username"
-                    placeholder="johndoe"
+                    id="email"
+                    name="email"
+                    type="email"
+                    placeholder="jane@example.com"
                     required
                     className="pl-9"
                     autoCapitalize="none"
+                    autoComplete="email"
                     autoCorrect="off"
                     spellCheck={false}
                   />
@@ -73,7 +113,10 @@ export default function LoginForm() {
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" aria-hidden />
+                  <Lock
+                    className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground"
+                    aria-hidden
+                  />
                   <Input
                     id="password"
                     name="password"
@@ -85,25 +128,27 @@ export default function LoginForm() {
                 </div>
               </div>
 
+              {error && (
+                <p className="text-sm font-medium text-destructive">{error}</p>
+              )}
+
               <div className="pt-2">
                 <Button
-  type="submit"
-  disabled={loading}
-  className={cn(
-    "w-full justify-center",
-    "rounded-xl px-4 py-2 font-medium",
-    "bg-black text-white",
-    "border border-black",
-    "transition-all duration-300 ease-out",
-    "hover:bg-white hover:text-black hover:shadow-lg",
-    "disabled:opacity-70 disabled:cursor-not-allowed"
-  )}
->
-  {loading ? "Signing in..." : "Sign in"}
-  <ArrowRight className="ml-2 size-4" aria-hidden />
-</Button>
-
-
+                  type="submit"
+                  disabled={loading}
+                  className={cn(
+                    "w-full justify-center",
+                    "rounded-xl px-4 py-2 font-medium",
+                    "bg-black text-white",
+                    "border border-black",
+                    "transition-all duration-300 ease-out",
+                    "hover:bg-white hover:text-black hover:shadow-lg",
+                    "disabled:opacity-70 disabled:cursor-not-allowed"
+                  )}
+                >
+                  {loading ? "Signing in..." : "Sign in"}
+                  <ArrowRight className="ml-2 size-4" aria-hidden />
+                </Button>
               </div>
 
               <p className="text-center text-sm text-muted-foreground">
@@ -120,5 +165,5 @@ export default function LoginForm() {
         </Card>
       </div>
     </div>
-  )
+  );
 }

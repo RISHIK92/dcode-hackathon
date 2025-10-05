@@ -1,14 +1,13 @@
 import { Router } from "express";
-import { protect } from "../middleware/middleware";
+import { protect } from "../middleware/middleware.js";
 import {
   createProject,
   getProjects,
   getProjectById,
   updateProjectName,
   deleteProject,
-  updateProjectCode,
-} from "../controllers/projectController";
-import fileRoutes from "./fileRouter";
+} from "../controllers/projectController.js";
+import fileRoutes from "./fileRouter.js";
 
 const router = Router();
 
@@ -21,8 +20,6 @@ router
   .get(getProjectById)
   .put(updateProjectName)
   .delete(deleteProject);
-
-router.put("/:id/code", updateProjectCode);
 
 router.use("/:projectId/files", fileRoutes);
 

@@ -1,7 +1,7 @@
 import { Response } from "express";
-import { AuthRequest } from "../middleware/middleware";
-import prisma from "../services/db";
-import * as containerManager from "../services/containerManager";
+import { AuthRequest } from "../middleware/middleware.js";
+import prisma from "../services/db.js";
+import * as containerManager from "../services/containerManager.js";
 
 /**
  * @desc    Starts a build session for a project

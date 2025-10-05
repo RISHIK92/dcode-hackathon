@@ -1,5 +1,5 @@
 import { Response } from "express";
-import { AuthRequest } from "../middleware/middleware";
+import { AuthRequest } from "../middleware/middleware.js";
 import prisma from "../services/db.js";
 
 // Helper function to check project ownership
