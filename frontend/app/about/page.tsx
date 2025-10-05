@@ -7,7 +7,7 @@ export default function AboutPage() {
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-foreground mb-4">
-            About RNLive
+            About Nativex
           </h1>
           <p className="text-lg text-muted-foreground">
             Built with passion during the Orchid UI Hackathon
@@ -24,9 +24,9 @@ export default function AboutPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              RNLive is an in-browser React Native playground that lets you write, edit, and
+              Nativex is an in-browser React Native playground that lets you write, edit, and
               preview React Native code instantly. Inspired by tools like Expo Snack and
-              CodeSandbox, RNLive aims to make learning and prototyping React Native applications
+              CodeSandbox, Nativex aims to make learning and prototyping React Native applications
               accessible to everyone.
             </p>
             <p className="text-sm text-muted-foreground">
@@ -55,7 +55,7 @@ export default function AboutPage() {
           <CardHeader>
             <CardTitle>The Team</CardTitle>
             <CardDescription>
-              Meet the developers behind RNLive
+              Meet the developers behind Nativex
             </CardDescription>
           </CardHeader>
           <CardContent>

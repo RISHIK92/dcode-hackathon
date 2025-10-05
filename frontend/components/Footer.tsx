@@ -25,7 +25,7 @@ export default function Footer() {
     <footer className="h-14 border-t border-border bg-card px-6 flex items-center justify-between shadow-sm">
       <div className="flex items-center gap-2">
         <span className="text-sm text-muted-foreground">
-          © 2025 RNLive Hackathon
+          © 2025 NativeX
         </span>
       </div>
 

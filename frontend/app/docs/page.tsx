@@ -15,7 +15,7 @@ export default function DocsPage() {
             Documentation
           </h1>
           <p className="text-lg text-muted-foreground">
-            Learn how RNLive works and what you can build with it
+            Learn how NativeX works and what you can build with it
           </p>
         </div>
 
@@ -25,7 +25,7 @@ export default function DocsPage() {
             <CardHeader>
               <CardTitle>How It Works</CardTitle>
               <CardDescription>
-                Understanding the RNLive playground architecture
+                Understanding the NativeX playground architecture
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -33,7 +33,7 @@ export default function DocsPage() {
                 <AccordionItem value="item-1">
                   <AccordionTrigger>Code Editor</AccordionTrigger>
                   <AccordionContent>
-                    RNLive uses Monaco Editor (the same editor that powers VS Code) to provide
+                    NativeX uses Monaco Editor (the same editor that powers VS Code) to provide
                     a powerful code editing experience with syntax highlighting, auto-completion,
                     and real-time error detection for React Native code.
                   </AccordionContent>
@@ -50,7 +50,7 @@ export default function DocsPage() {
                   <AccordionTrigger>Instant Compilation</AccordionTrigger>
                   <AccordionContent>
                     Your code is transpiled using Babel in the browser, allowing for instant
-                    feedback without any server-side processing. This makes RNLive fast and
+                    feedback without any server-side processing. This makes NativeX fast and
                     responsive, perfect for quick prototyping and learning.
                   </AccordionContent>
                 </AccordionItem>
